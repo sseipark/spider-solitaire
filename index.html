@@ -320,6 +320,9 @@
     .dialog-footer {
       padding-bottom: 12px;
       text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
     }
 
     .dialog-btn {
@@ -339,7 +342,7 @@
       <div class="menu-item">
         게임(G)
         <div class="dropdown">
-          <div class="dropdown-item" onclick="initGame()">새 게임(N)</div>
+          <div class="dropdown-item" onclick="startNewGameConfirm()">새 게임(N)</div>
           <div class="dropdown-item" onclick="undoMove()">실행 취소(U)</div>
           <div class="dropdown-item" onclick="toggleMiniMode()" id="miniMenuText">몰컴 미니 모드</div>
           <div class="dropdown-item" onclick="openMiniWindow()">독립 팝업창 열기</div>
@@ -377,7 +380,7 @@
         <div class="dialog-close" onclick="closeDialog()">✕</div>
       </div>
       <div class="dialog-body" id="dialogText">메시지 내용</div>
-      <div class="dialog-footer">
+      <div class="dialog-footer" id="dialogFooter">
         <button class="dialog-btn" onclick="closeDialog()">확인</button>
       </div>
     </div>
@@ -395,9 +398,17 @@
     let isMiniMode = false;
     let isDealing = false;
 
-    function openDialog(text, title = '스파이더 카드놀이') {
+    function openDialog(text, title = '스파이더 카드놀이', buttons = null) {
       document.getElementById('dialogTitle').innerText = title;
       document.getElementById('dialogText').innerText = text;
+      
+      const footer = document.getElementById('dialogFooter');
+      if (buttons) {
+        footer.innerHTML = buttons;
+      } else {
+        footer.innerHTML = '<button class="dialog-btn" onclick="closeDialog()">확인</button>';
+      }
+      
       document.getElementById('customDialog').style.display = 'block';
     }
 
@@ -534,8 +545,51 @@
     let selectedSelection = null;
     let draggedCardsInfo = null;
 
+    /* 💾 1. localStorage에 게임 상태 저장 */
+    function saveGameToStorage() {
+      const gameState = {
+        columns, stock, completedSets, historyStack, score, moves, currentDifficulty
+      };
+      localStorage.setItem('spiderSolitaireSaveData', JSON.stringify(gameState));
+    }
+
+    /* 💾 2. localStorage에서 게임 상태 불러오기 */
+    function loadGameFromStorage() {
+      const savedData = localStorage.getItem('spiderSolitaireSaveData');
+      if (!savedData) return false;
+
+      try {
+        const parsed = JSON.parse(savedData);
+        columns = parsed.columns;
+        stock = parsed.stock;
+        completedSets = parsed.completedSets;
+        historyStack = parsed.historyStack;
+        score = parsed.score;
+        moves = parsed.moves;
+        currentDifficulty = parsed.currentDifficulty;
+        render();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    /* 💾 3. 저장된 상태 제거 */
+    function clearStorage() {
+      localStorage.removeItem('spiderSolitaireSaveData');
+    }
+
+    function startNewGameConfirm() {
+      openDialog("새 게임을 시작하시겠습니까?\n진행 중인 판은 사라집니다.", "새 게임", `
+        <button class="dialog-btn" onclick="closeDialog(); initGame();">확인</button>
+        <button class="dialog-btn" onclick="closeDialog();">취소</button>
+      `);
+    }
+
     function initGame() {
       closeDialog();
+      clearStorage();
+
       const suits = SUITS_MAP[currentDifficulty];
       const setsPerSuit = 8 / suits.length;
 
@@ -574,6 +628,7 @@
       }
 
       stock = deck;
+      saveGameToStorage();
       render();
     }
 
@@ -593,6 +648,7 @@
       score = lastState.score;
       moves = lastState.moves;
       selectedSelection = null;
+      saveGameToStorage();
       render();
     }
 
@@ -619,6 +675,7 @@
         selectedSelection = null;
 
         checkCompleteSet(destColIdx);
+        saveGameToStorage();
         render();
         return true;
       }
@@ -692,6 +749,7 @@
           clearInterval(interval);
           moves++;
           isDealing = false;
+          saveGameToStorage();
           render();
         }
       }, 50);
@@ -717,7 +775,10 @@
           col[col.length - 1].faceUp = true;
         }
 
+        saveGameToStorage();
+
         if (completedSets.length === 8) {
+          clearStorage();
           setTimeout(() => {
             openDialog(`축하합니다! 승리하셨습니다.\n최종 점수: ${score} | 이동 수: ${moves}`, "게임 승리");
           }, 300);
@@ -777,7 +838,6 @@
           if (e.target === colDiv) handleColumnClick(colIdx);
         };
 
-        /* 💡 동적 간격 계산: 카드가 10장 넘어가기 시작하면 간격을 자동으로 슬림하게 축소 */
         const totalCards = col.length;
         let dynamicOverlap = defaultOverlap;
         let dynamicDownOverlap = defaultDownOverlap;
@@ -858,7 +918,19 @@
       });
     }
 
-    initGame();
+    /* 🚀 페이지 접속 시 저장된 게임이 있으면 이어서 시작할지 안내 */
+    function checkSavedGameOnInit() {
+      if (localStorage.getItem('spiderSolitaireSaveData')) {
+        openDialog("이전에 하던 게임이 남아있습니다.\n이어서 진행하시겠습니까?", "게임 이어하기", `
+          <button class="dialog-btn" onclick="closeDialog(); loadGameFromStorage();">이어서 하기</button>
+          <button class="dialog-btn" onclick="closeDialog(); initGame();">새로 시작</button>
+        `);
+      } else {
+        initGame();
+      }
+    }
+
+    checkSavedGameOnInit();
   </script>
 </body>
 </html>
