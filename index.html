@@ -269,8 +269,7 @@
     }
 
     .card.selected {
-      outline: 2px solid #ffff00;
-      box-shadow: 0 0 6px #ffff00;
+      /* 선택 테두리 미표시 */
     }
 
     .custom-dialog {
@@ -343,6 +342,8 @@
         게임(G)
         <div class="dropdown">
           <div class="dropdown-item" onclick="startNewGameConfirm()">새 게임(N)</div>
+          <div class="dropdown-item" onclick="manualSaveGame()">게임 저장(S)</div>
+          <div class="dropdown-item" onclick="manualLoadGame()">게임 불러오기(L)</div>
           <div class="dropdown-item" onclick="undoMove()">실행 취소(U)</div>
           <div class="dropdown-item" onclick="toggleMiniMode()" id="miniMenuText">몰컴 미니 모드</div>
           <div class="dropdown-item" onclick="openMiniWindow()">독립 팝업창 열기</div>
@@ -452,7 +453,7 @@
           </g>
           <g fill="#111111" stroke="#000000">
             <path d="M50,60 Q30,35 15,40 M50,60 Q20,50 10,60 M50,60 Q20,70 12,80 M50,60 Q30,85 20,95" stroke="#111" stroke-width="2.5" fill="none"/>
-            <path d="M50,60 Q70,35 85,40 M50,60 Q20,50 90,60 M50,60 Q80,70 88,80 M50,60 Q70,85 80,95" stroke="#111" stroke-width="2.5" fill="none"/>
+            <path d="M50,60 Q70,35 85,40 M50,60 Q20,50 90,60 M50,60 Q70,85 80,95" stroke="#111" stroke-width="2.5" fill="none"/>
             <ellipse cx="50" cy="55" rx="5" ry="4" fill="#222"/>
             <ellipse cx="50" cy="68" rx="8" ry="11" fill="#8b0000" stroke="#000" stroke-width="1"/>
             <path d="M52,62 C46,60 46,66 50,68 C54,69 45,70 46,73 L53,73" stroke="#ff3333" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -545,7 +546,7 @@
     let selectedSelection = null;
     let draggedCardsInfo = null;
 
-    /* 💾 1. localStorage에 게임 상태 저장 */
+    /* 💾 게임 저장 기능 */
     function saveGameToStorage() {
       const gameState = {
         columns, stock, completedSets, historyStack, score, moves, currentDifficulty
@@ -553,7 +554,20 @@
       localStorage.setItem('spiderSolitaireSaveData', JSON.stringify(gameState));
     }
 
-    /* 💾 2. localStorage에서 게임 상태 불러오기 */
+    function manualSaveGame() {
+      saveGameToStorage();
+      openDialog("현재 게임 상태가 저장되었습니다!", "저장 완료");
+    }
+
+    function manualLoadGame() {
+      if (localStorage.getItem('spiderSolitaireSaveData')) {
+        loadGameFromStorage();
+        openDialog("저장된 게임을 성공적으로 불러왔습니다!", "불러오기 완료");
+      } else {
+        openDialog("저장된 게임 데이터가 없습니다.", "알림");
+      }
+    }
+
     function loadGameFromStorage() {
       const savedData = localStorage.getItem('spiderSolitaireSaveData');
       if (!savedData) return false;
@@ -574,7 +588,6 @@
       }
     }
 
-    /* 💾 3. 저장된 상태 제거 */
     function clearStorage() {
       localStorage.removeItem('spiderSolitaireSaveData');
     }
@@ -918,7 +931,6 @@
       });
     }
 
-    /* 🚀 페이지 접속 시 저장된 게임이 있으면 이어서 시작할지 안내 */
     function checkSavedGameOnInit() {
       if (localStorage.getItem('spiderSolitaireSaveData')) {
         openDialog("이전에 하던 게임이 남아있습니다.\n이어서 진행하시겠습니까?", "게임 이어하기", `
