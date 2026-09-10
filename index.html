@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>스파이더 카드놀이</title>
-  <!-- 📌 1. 브라우저 탭 아이콘(파비콘) 적용 -->
   <link rel="icon" href="spider_icon.ico" type="image/x-icon">
   <style>
     :root {
@@ -417,12 +416,14 @@
       render();
     }
 
+    /* 🔧 깃허브 웹 환경 독립 팝업창 주소 호출 보정 */
     function openMiniWindow() {
       const width = 780;
       const height = 555;
       const left = (window.screen.width || 1920) - width - 20;
       const top = (window.screen.height || 1080) - height - 60;
-      window.open(window.location.href, 'SpiderMiniWindow', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`);
+      const targetUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+      window.open(targetUrl, 'SpiderMiniWindow', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`);
     }
 
     function changeDifficulty(mode) {
@@ -430,7 +431,6 @@
       initGame();
     }
 
-    /* 📌 2. 카드 뒷면 거미 등판에 시그니처 'S' 서명 교체 적용 */
     const SPIDER_BACK_HTML = `
       <div class="spider-art">
         <svg viewBox="0 0 100 120" style="width:100%; height:100%; position:absolute;">
@@ -445,7 +445,6 @@
             <path d="M50,60 Q70,35 85,40 M50,60 Q20,50 90,60 M50,60 Q80,70 88,80 M50,60 Q70,85 80,95" stroke="#111" stroke-width="2.5" fill="none"/>
             <ellipse cx="50" cy="55" rx="5" ry="4" fill="#222"/>
             <ellipse cx="50" cy="68" rx="8" ry="11" fill="#8b0000" stroke="#000" stroke-width="1"/>
-            <!-- ✍️ 거미 등판 시그니처 S 서명 선 드로잉 -->
             <path d="M52,62 C46,60 46,66 50,68 C54,69 45,70 46,73 L53,73" stroke="#ff3333" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
         </svg>
