@@ -146,7 +146,7 @@
       padding: 0 4px;
       flex-shrink: 0;
       position: relative;
-      z-index: 10;
+      z-index: 100;
     }
     body.mini-mode .bottom-section { height: 66px; }
 
@@ -190,7 +190,7 @@
       cursor: grab;
       border: 1px solid #111111;
       overflow: hidden;
-      transition: top 0.25s ease-out, left 0.25s ease-out, transform 0.25s ease-out;
+      transition: top 0.2s ease-out, left 0.25s ease-out, transform 0.25s ease-out;
     }
     .card:active { cursor: grabbing; }
 
@@ -416,7 +416,6 @@
       render();
     }
 
-    /* 🔧 깃허브 웹 환경 독립 팝업창 주소 호출 보정 */
     function openMiniWindow() {
       const width = 780;
       const height = 555;
@@ -757,8 +756,8 @@
       tableauEl.innerHTML = '';
 
       const computedStyle = getComputedStyle(document.documentElement);
-      const overlapSize = parseInt(computedStyle.getPropertyValue('--overlap-size')) || 16;
-      const downOverlapSize = parseInt(computedStyle.getPropertyValue('--down-overlap-size')) || 6;
+      const defaultOverlap = parseInt(computedStyle.getPropertyValue('--overlap-size')) || 16;
+      const defaultDownOverlap = parseInt(computedStyle.getPropertyValue('--down-overlap-size')) || 6;
 
       columns.forEach((col, colIdx) => {
         const colDiv = document.createElement('div');
@@ -778,16 +777,28 @@
           if (e.target === colDiv) handleColumnClick(colIdx);
         };
 
+        /* 💡 동적 간격 계산: 카드가 10장 넘어가기 시작하면 간격을 자동으로 슬림하게 축소 */
+        const totalCards = col.length;
+        let dynamicOverlap = defaultOverlap;
+        let dynamicDownOverlap = defaultDownOverlap;
+
+        if (totalCards > 9) {
+          const shrinkFactor = Math.max(0.45, 1 - (totalCards - 9) * 0.055);
+          dynamicOverlap = Math.max(6, Math.floor(defaultOverlap * shrinkFactor));
+          dynamicDownOverlap = Math.max(3, Math.floor(defaultDownOverlap * shrinkFactor));
+        }
+
         col.forEach((card, cardIdx) => {
           const cardDiv = document.createElement('div');
           
           let topOffset = 0;
           for (let i = 0; i < cardIdx; i++) {
-            topOffset += col[i].faceUp ? overlapSize : downOverlapSize;
+            topOffset += col[i].faceUp ? dynamicOverlap : dynamicDownOverlap;
           }
 
           cardDiv.className = `card ${card.color} ${card.faceUp ? '' : 'face-down'}`;
           cardDiv.style.top = `${topOffset}px`;
+          cardDiv.style.zIndex = cardIdx + 1;
 
           if (card.faceUp) {
             cardDiv.draggable = isValidSequence(col, cardIdx);
